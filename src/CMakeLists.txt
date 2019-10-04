@@ -1,4 +1,3 @@
-#project(libShm_v0.1.0)
 PROJECT(libShm)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
@@ -24,20 +23,12 @@ if (NOT "$ENV{CPP_PATH}" STREQUAL "")
 endif()
 message("CPP_PATH = ${CPP_PATH}")
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CPP_PATH}/lib)
-
-#find_package (Threads)
-#find_package( OpenCV )
 file(GLOB SOURCES
     *.h
     *.cpp
 )
 
-add_executable(${PROJECT_NAME} "main.cpp" ${SOURCES})
 add_library(Shm SHARED ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
-#${OpenCV_LIBS}
-#${CMAKE_THREAD_LIBS_INIT}
-#                     )
+
 
