@@ -23,4 +23,5 @@
 
 1. Interface
 2. Thread Safety
-2. Conan Package
+3. Conan Package
+4. Added utility function for detection of regions that were created by this library

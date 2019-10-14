@@ -12,3 +12,6 @@ extern "C" bool Write(BaseShmm* pFoo,int64_t frameNum,void* data);
 extern "C" void Delete(int shmid);
 extern "C" bool checkShmid(int shmid);
 extern "C" int64_t numOfBlocks(BaseShmm* pFoo);
+extern "C" my_array FindSegments();
+extern "C" void FreeResultOfFindSegments(int* pointer);
+

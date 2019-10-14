@@ -53,3 +53,13 @@ extern "C" int64_t numOfBlocks(BaseShmm *pFoo)
 {
     return pFoo->getMaxSize();
 }
+
+my_array FindSegments()
+{
+    return BaseShmm::findSegments();
+}
+
+void FreeResultOfFindSegments(int *pointer)
+{
+    delete[] pointer;
+}

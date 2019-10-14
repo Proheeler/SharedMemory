@@ -10,6 +10,14 @@
 #include <sys/shm.h>
 #include <cstdint>
 
+struct my_array
+{
+    int* pointer;
+    int size;
+};
+
+
+
 /*!
     \brief Класс для работы с разделяемой памятью
 
@@ -84,6 +92,12 @@ public:
     void resetAtomics();
 
     int getShmid() const;
+
+
+    /*!
+    Функция для сегментов созданных этой библиотекой
+    */
+    static my_array findSegments();
 
 private:
     int64_t memorySize;
