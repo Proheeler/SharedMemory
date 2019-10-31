@@ -26,6 +26,28 @@ struct my_array
 
 class BaseShmm
 {
+    class iterator
+    {
+        friend class BaseShmm;
+        BaseShmm* ptr;
+        int index;
+    public:
+        iterator(BaseShmm* shmPtr,int64_t index_):ptr(shmPtr),index(index_){}
+        void* operator*() const {
+            void *retPtr = ptr->readFromSegment(index);
+            ptr->unlock(index);
+            return retPtr;
+        }
+        iterator& operator++() {
+            ++index;
+            return *this;
+        }
+        bool operator!=(const iterator &other) const
+        {
+            return index != other.index;
+        }
+
+    };
 public:
     /*!
     Конструктор подключения к разделяемой памяти
@@ -98,28 +120,7 @@ public:
     Функция для сегментов созданных этой библиотекой
     */
     static my_array findSegments();
-    class iterator
-    {
-        friend class BaseShmm;
-        BaseShmm* ptr;
-        int index;
-    public:
-        iterator(BaseShmm* shmPtr,int64_t index_):ptr(shmPtr),index(index_){}
-        void* operator*() const {
-            void *retPtr = ptr->readFromSegment(index);
-            ptr->unlock(index);
-            return retPtr;
-        }
-        iterator& operator++() {
-            ++index;
-            return *this;
-        }
-        bool operator!=(const iterator &other) const
-        {
-            return index != other.index;
-        }
 
-    };
     iterator begin() const{
         iterator ret(const_cast<BaseShmm*>(this),0);
         return ret;
@@ -130,6 +131,7 @@ public:
         return ret;
     }
 private:
+
     int64_t memorySize;
     int64_t blockSize;
     int64_t dataShift;
