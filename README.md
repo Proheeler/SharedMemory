@@ -15,9 +15,8 @@
 # In progress:
 
 1. RPC via shared memory
-2. Iterators
-3. STL containers based on shared memory
-4. Deb package
+2. STL containers based on shared memory
+3. Deb package
 
 # Done:
 
@@ -25,3 +24,4 @@
 2. Thread Safety
 3. Conan Package
 4. Added utility function for detection of regions that were created by this library
+5. Iterators
