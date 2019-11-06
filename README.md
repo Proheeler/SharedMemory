@@ -25,3 +25,4 @@
 3. Conan Package
 4. Added utility function for detection of regions that were created by this library
 5. Iterators
+6. Documentation
