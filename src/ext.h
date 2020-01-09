@@ -14,4 +14,4 @@ extern "C" bool checkShmid(int shmid);
 extern "C" int64_t numOfBlocks(BaseShmm* pFoo);
 extern "C" my_array FindSegments();
 extern "C" void FreeResultOfFindSegments(int* pointer);
-
+extern "C" void ReinitSharedMemoryOnNewChunSize(BaseShmm* pFoo,int64_t ChunkSize);

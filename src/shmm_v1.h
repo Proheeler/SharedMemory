@@ -115,6 +115,12 @@ public:
 
     int getShmid() const;
 
+    /*!
+    Функция для переразметки разделяемой памяти для нового типа данных
+    \param[in] chunkSize Размер нового блоба
+    */
+    void reinitMemory(const int & chunkSize);
+
 
     /*!
     Функция для сегментов созданных этой библиотекой

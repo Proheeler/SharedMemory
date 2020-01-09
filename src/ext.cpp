@@ -54,12 +54,17 @@ extern "C" int64_t numOfBlocks(BaseShmm *pFoo)
     return pFoo->getMaxSize();
 }
 
-my_array FindSegments()
+extern "C" my_array FindSegments()
 {
     return BaseShmm::findSegments();
 }
 
-void FreeResultOfFindSegments(int *pointer)
+extern "C" void FreeResultOfFindSegments(int *pointer)
 {
     delete[] pointer;
+}
+
+extern "C" void ReinitSharedMemoryOnNewChunSize(BaseShmm *pFoo, int64_t ChunkSize)
+{
+    pFoo->reinitMemory(ChunkSize);
 }

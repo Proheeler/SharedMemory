@@ -86,8 +86,13 @@ int BaseShmm::deleteSegment(int shmid_)
 
 void* BaseShmm::readFromSegment(int64_t blockIndex)
 {
-    int64_t index = blockIndex%(maxSize);
-    std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)mem_ptr+1+2*sizeOfInt64+index*dataShift)));
+    int64_t memory_size = getMemorySize();
+    int64_t blockSize_ = getBlockSize();
+    int maxSize_=(memory_size-2*sizeof(int64_t*))/(sizeof(std::atomic<int>*)+blockSize_);
+    int64_t dataShift_ =blockSize_+sizeof(std::atomic<int>*);
+    int64_t index = blockIndex%(maxSize_);
+
+    std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)mem_ptr+1+2*sizeOfInt64+index*dataShift_)));
     void *ptr=nullptr;
     int free = 0;
     int read = 2;
@@ -95,7 +100,7 @@ void* BaseShmm::readFromSegment(int64_t blockIndex)
     bool exchangedRead = atomic.compare_exchange_strong(read,read,std::memory_order_acquire,std::memory_order_release);
     if(exchangedFree || exchangedRead)
     {
-        ptr=(char *)mem_ptr+1+2*sizeOfInt64+index*dataShift+sizeof(std::atomic<int>*);
+        ptr=(char *)mem_ptr+1+2*sizeOfInt64+index*dataShift_+sizeof(std::atomic<int>*);
     }
     else
     {
@@ -109,14 +114,19 @@ void* BaseShmm::readFromSegment(int64_t blockIndex)
 
 bool BaseShmm::writeToSegment(int64_t blockIndex, void *data)
 {
-    int64_t index = blockIndex%(maxSize);
-    volatile std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)mem_ptr+1+2*sizeOfInt64+index*dataShift)));
+    int64_t memory_size = getMemorySize();
+    int64_t blockSize_ = getBlockSize();
+    int maxSize_=(memory_size-2*sizeof(int64_t*))/(sizeof(std::atomic<int>*)+blockSize_);
+    int64_t dataShift_ =blockSize_+sizeof(std::atomic<int>*);
+    int64_t index = blockIndex%(maxSize_);
+
+    volatile std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)mem_ptr+1+2*sizeOfInt64+index*dataShift_)));
     int free = 0;
     int write = 1;
     bool exchanged = atomic.compare_exchange_strong(free,write);
     if(exchanged)
     {
-        memcpy((char*)mem_ptr+2*sizeOfInt64+1+index*dataShift+sizeof(std::atomic<int>*),data,blockSize);
+        memcpy((char*)mem_ptr+2*sizeOfInt64+1+index*dataShift_+sizeof(std::atomic<int>*),data,blockSize_);
         atomic.exchange(0,std::memory_order_acquire);
         return true;
     }
@@ -129,8 +139,13 @@ bool BaseShmm::writeToSegment(int64_t blockIndex, void *data)
 
 void BaseShmm::unlock(int64_t frameNum)
 {
-    int64_t index = frameNum%(maxSize);
-    std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)mem_ptr+1+2*sizeOfInt64+index*dataShift)));
+    int64_t memory_size = getMemorySize();
+    int64_t blockSize_ = getBlockSize();
+    int maxSize_=(memory_size-2*sizeof(int64_t*)-1)/(sizeof(std::atomic<int>*)+blockSize_);
+    int64_t dataShift_ =blockSize_+sizeof(std::atomic<int>*);
+    int64_t index = frameNum%(maxSize_);
+
+    std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)mem_ptr+1+2*sizeOfInt64+index*dataShift_)));
     atomic.exchange(0,std::memory_order_acquire);
 }
 
@@ -169,6 +184,22 @@ void BaseShmm::resetAtomics()
 int BaseShmm::getShmid() const
 {
     return shmid;
+}
+
+void BaseShmm::reinitMemory(const int & chunkSize)
+{
+    void *tmp = mem_ptr;
+    blockSize = chunkSize;
+    maxSize = (getMemorySize()-2*sizeof(int64_t*)-1)/(sizeof(std::atomic<int>*)+blockSize);
+
+    for(int i=0;i<maxSize;++i){
+        std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)((char*)tmp+1+2*sizeof(int64_t*)+i*(sizeof(std::atomic<int>*)+blockSize))));
+        atomic.store(0,std::memory_order_release);
+    }
+    int64_t& refForChunkSize = static_cast<int64_t&>(*(static_cast<int64_t*>((void*)((char*)tmp+1+sizeof(int64_t*)))));
+    refForChunkSize = blockSize;
+    dataShift=blockSize+sizeof(std::atomic<int>*);
+
 }
 
 my_array BaseShmm::findSegments()
