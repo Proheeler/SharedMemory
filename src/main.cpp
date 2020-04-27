@@ -2,7 +2,7 @@
 #include <string.h>
 
 ////#include <opencv2/opencv.hpp>
-#include "shmm_v1.h"
+#include "BaseShmm.h"
 #include "ext.h"
 
 int main()
@@ -44,7 +44,16 @@ int main()
     std::cout<<shmm->getBlockSize()<<"\t"<<shmm->getMemorySize()<<std::endl;
     shmm->reinitMemory(16);
     std::cout<<shmm->getMaxSize()<<std::endl;
-        std::cout<<shmm->getBlockSize()<<"\t"<<shmm->getMemorySize()<<std::endl;
+    std::cout<<shmm->getBlockSize()<<"\t"<<shmm->getMemorySize()<<std::endl;
+
+    Array arr;
+    arr = FindSegments();
+    //   std::cout<<arr.size<<std::endl;
+    for(int i=0;i<arr.size;++i)
+    {
+        std::cout<<i<<" "<<*(arr.pointer+i)<<std::endl;
+    }
+    FreeResultOfFindSegments(arr.pointer);
     //    char a[]="1234567890";
     //    Write(shmm,0,a);
     //    std::string tmp((char*)(LockAndRead(shmm,0)));
