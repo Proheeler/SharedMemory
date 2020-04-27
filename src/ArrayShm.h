@@ -1,14 +1,30 @@
 #ifndef ARRAYSHM_H
 #define ARRAYSHM_H
 #include "BaseShmm.h"
+template< typename T>
 class ArrayShm:public BaseShmm
 {
 public:
-    explicit ArrayShm(int shmid):BaseShmm(shmid){
+    explicit ArrayShm(size_t numberOfElements):BaseShmm(
+                                                   BaseShmm::createSegment((numberOfElements*(sizeof(T)+sizeof(std::atomic<int>*)))+1+2*sizeof(size_t),sizeof(T)))
+    {
         resetAtomics();
     }
-
-    template<typename T,typename ... U>
+    ~ArrayShm()
+    {
+        shmdt(get());
+        BaseShmm::deleteSegment(getShmid());
+    }
+    bool write(int index,void* data,bool forceWrite = false)
+    {
+       auto isWritten = writeToSegment(index,data);
+       if(!isWritten && forceWrite){
+           resetAtomics();
+           isWritten =writeToSegment(index,data);
+       }
+       return isWritten;
+    }
+    template<typename ... U>
     bool emplaceWrite(int index,const U ...args)
     {
         int dataShift=getBlockSize()+sizeof(std::atomic<int>*);
@@ -27,17 +43,15 @@ public:
         return false;
 
     }
-    template<typename T>
     T* operator [](int index)
     {
         return static_cast<T*>(readFromSegment(index));
     }
-    template<typename T>
     T* at(size_t index)
     {
         if(index<getMaxSize() && index>=0)
         {
-            return static_cast<T*>(readFromSegment(index));
+            return (static_cast<T*>(readFromSegment(index)));
         }
         throw std::invalid_argument("Index out of range");
     }

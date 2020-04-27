@@ -162,7 +162,7 @@ public:
         size_t maxSize_=(memory_size-2*sizeof(int64_t*)-1)/(sizeof(std::atomic<int>*)+blockSize_);
         size_t dataShift_ =blockSize_+sizeof(std::atomic<int>*);
         size_t index = blockIndex%(maxSize_);
-        volatile std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)(static_cast<char*>(mem_ptr)+2*sizeof(size_t*)+index*dataShift_)));
+        volatile std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)(static_cast<char*>(mem_ptr)+1+2*sizeof(size_t*)+index*dataShift_)));
         int free = 0;
         int write = 1;
         bool exchanged = atomic.compare_exchange_strong(free,write);
