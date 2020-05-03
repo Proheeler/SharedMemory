@@ -5,6 +5,7 @@
 #include "ext.h"
 #include "ArrayShm.h"
 #include "VariantNode.h"
+#include "LinkedVariantList.h"
 int main()
 {
     int shmid =Create(sizeof(int)*10+100,4);
@@ -56,7 +57,6 @@ int main()
     VariantNode node(sizeof(size_t));
     NodeInfo info = node.info();
     std::cout<<info.currentShmid_<<std::endl;
-    std::cout<<node.writeNodeInfo()<<std::endl;
 
     size_t data = 100500;
     std::cout<<node.writeData(&data)<<std::endl;
@@ -66,14 +66,33 @@ int main()
     std::cout<<((NodeInfo*)(test_node.readFromSegment(0)))->nextShmid_<<std::endl;
     std::cout<<((NodeInfo*)(test_node.readFromSegment(0)))->prevShmid_<<std::endl;
     std::cout<<((NodeInfo*)(test_node.readFromSegment(0)))->currentShmid_<<std::endl;
-    node.~VariantNode();
+
+    auto node_copy = VariantNode::createFromExisting(info.currentShmid_);
+    assert(node_copy.info().currentShmid_ == info.currentShmid_ );
+    assert(node_copy.info().dataSize_ == info.dataSize_ );
 
 
+    VariantNode node2(sizeof(size_t));
+    NodeInfo info2 = node2.info();
+    info2.prevShmid_ = node.info().currentShmid_;
+    node2.setInfo(info2);
+    std::cout<<info2.currentShmid_<<std::endl;
+    size_t data2 = 100600;
+    std::cout<<node2.writeData(&data2)<<std::endl;
+    info.nextShmid_ = info2.currentShmid_;
+    node.setInfo(info);
+    SharedLinkedVariantList list(info.currentShmid_);
+    VariantNode node3(sizeof(size_t));
+    std::cout<<node3.writeData(&data2)<<std::endl;
+    list.insertNode(-1,node3);
 
-    Array arr1;
-    arr1 = FindSegments();
-    assert(arr1.size ==0);
-    FreeResultOfFindSegments(arr1.pointer);
+//    list.~LinkedVariantList();
+
+
+//    Array arr1;
+//    arr1 = FindSegments();
+//    assert(arr1.size ==0);
+//    FreeResultOfFindSegments(arr1.pointer);
     return 0;
 }
 
