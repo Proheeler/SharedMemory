@@ -12,24 +12,41 @@ public:
         list_.push_back(VariantNode::createFromExisting(headShmid_));
         initStructure();
     }
-    void pushbackNode(VariantNode node)
+    ~SharedLinkedVariantList()
+    {
+        for(VariantNode const & i:list_)
+        {
+            BaseShmm::deleteSegment(i.info().currentShmid_);
+        }
+    }
+    void pushback(VariantNode && node)
     {
         auto nodeInfo = node.info();
         nodeInfo.prevShmid_ = list_.back().info().currentShmid_;
         nodeInfo.nextShmid_ = -1;
         node.setInfo(nodeInfo);
-        list_.push_back(node);
+
+        auto prevInfonextNode = list_.back().info();
+        prevInfonextNode.nextShmid_ = node.info().currentShmid_;
+        list_.back().setInfo(prevInfonextNode);
+
+        list_.push_back(std::move(node));
     }
-    void pushbackNode(int shmid)
+    void pushback(int shmid)
     {
         auto node = VariantNode::createFromExisting(shmid);
         auto nodeInfo = node.info();
         nodeInfo.prevShmid_ = list_.back().info().currentShmid_;
         nodeInfo.nextShmid_ = -1;
         node.setInfo(nodeInfo);
-        list_.push_back(node);
+
+        auto prevInfonextNode = list_.back().info();
+        prevInfonextNode.nextShmid_ = node.info().currentShmid_;
+        list_.back().setInfo(prevInfonextNode);
+
+        list_.push_back(std::move(node));
     }
-    void insertNode(size_t index,VariantNode node)
+    void insert(size_t index,VariantNode && node)
     {
         if(index!=0 && index-1<list_.size())
         {
@@ -49,6 +66,7 @@ public:
         }
         else if(index == 0)
         {
+            headShmid_ = node.info().currentShmid_;
             auto prevInfonextNode = list_.at(index).info();
             prevInfonextNode.prevShmid_ = node.info().currentShmid_;
             list_.at(index).setInfo(prevInfonextNode);
@@ -63,10 +81,29 @@ public:
             auto nodeInfo = node.info();
             nodeInfo.prevShmid_ = list_.back().info().currentShmid_;
             nodeInfo.nextShmid_ = -1;
+
+            auto prevInfoprevNode = list_.at(index-1).info();
+            prevInfoprevNode.nextShmid_ = node.info().currentShmid_;
+            list_.at(index-1).setInfo(prevInfoprevNode);
             node.setInfo(nodeInfo);
         }
-        list_.insert(list_.begin()+index,node);
+        list_.insert(list_.begin()+index,std::move(node));
 
+    }
+    void remove(size_t index){
+
+    }
+    VariantNode operator [](int index)
+    {
+        return list_.at(index);
+    }
+    VariantNode at(size_t index)
+    {
+        if(index<list_.size())
+        {
+            return list_.at(index);
+        }
+        throw std::invalid_argument("Index out of range");
     }
 private:
     void initStructure(){

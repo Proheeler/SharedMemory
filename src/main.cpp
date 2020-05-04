@@ -84,15 +84,20 @@ int main()
     SharedLinkedVariantList list(info.currentShmid_);
     VariantNode node3(sizeof(size_t));
     std::cout<<node3.writeData(&data2)<<std::endl;
-    list.insertNode(-1,node3);
-
-//    list.~LinkedVariantList();
-
-
-//    Array arr1;
-//    arr1 = FindSegments();
-//    assert(arr1.size ==0);
-//    FreeResultOfFindSegments(arr1.pointer);
+    VariantNode node4(sizeof(size_t));
+    size_t data3 = 100700;
+    std::cout<<node4.writeData(&data3)<<std::endl;
+    list.insert(-1,std::move(node3));
+    list.pushback(std::move(node4));
+    void* nodeData = list.at(0).getData();
+    NodeInfo info_test =*(NodeInfo*)nodeData;
+    assert(info_test == info);
+    size_t datafromnode = *(size_t*)((char*)nodeData+sizeof(NodeInfo));
+    assert(datafromnode == data);
+    Array arr1;
+    arr1 = FindSegments();
+    assert(arr1.size >0);
+    FreeResultOfFindSegments(arr1.pointer);
     return 0;
 }
 
