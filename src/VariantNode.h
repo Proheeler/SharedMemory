@@ -11,7 +11,7 @@ struct NodeInfo
     int dataSize_{-1};
 };
 
-bool operator ==(NodeInfo const& nodeA,NodeInfo const& nodeB)
+bool operator == (NodeInfo const& nodeA,NodeInfo const& nodeB)
 {
     return (nodeA.dataSize_ == nodeB.dataSize_) && (nodeA.nextShmid_ == nodeB.nextShmid_)
             && (nodeA.prevShmid_ == nodeB.prevShmid_) && (nodeA.currentShmid_ == nodeB.currentShmid_) ;
