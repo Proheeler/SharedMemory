@@ -26,3 +26,5 @@
 4. Added utility function for detection of regions that were created by this library
 5. Iterators
 6. Documentation
+7. Array
+8. LinkedList
