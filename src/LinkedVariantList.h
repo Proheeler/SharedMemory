@@ -48,6 +48,7 @@ public:
     }
     void insert(size_t index,VariantNode && node)
     {
+        assert(index<list_.size());
         if(index!=0 && index-1<list_.size())
         {
             auto prevInfoprevNode = list_.at(index-1).info();
@@ -91,7 +92,36 @@ public:
 
     }
     void remove(size_t index){
-
+        assert(index<list_.size());
+        auto currentNodeInfo = list_.at(index).info();
+        if(index != 0 && index+1<list_.size())
+        {
+            auto prevInfoprevNode = list_.at(index-1).info();
+            auto prevInfonextNode = list_.at(index+1).info();
+            prevInfoprevNode.nextShmid_ = prevInfonextNode.currentShmid_;
+            list_.at(index-1).setInfo(prevInfoprevNode);
+            prevInfonextNode.prevShmid_ = prevInfoprevNode.currentShmid_;
+            list_.at(index+1).setInfo(prevInfonextNode);
+        }
+        else if(index == 0)
+        {
+            if(list_.size()>1){
+                headShmid_ = list_.at(index+1).info().currentShmid_;
+                auto prevInfonextNode = list_.at(index+1).info();
+                prevInfonextNode.prevShmid_ = -1;
+                list_.at(index+1).setInfo(prevInfonextNode);
+            }
+            else{
+                headShmid_=-1;
+            }
+        }
+        else{
+            auto prevInfoprevNode = list_.at(index-1).info();
+            prevInfoprevNode.nextShmid_ = -1;
+            list_.at(index-1).setInfo(prevInfoprevNode);
+        }
+        list_.erase(list_.begin()+index);
+        BaseShmm::deleteSegment(currentNodeInfo.currentShmid_);
     }
     VariantNode operator [](int index)
     {
@@ -104,6 +134,10 @@ public:
             return list_.at(index);
         }
         throw std::invalid_argument("Index out of range");
+    }
+    size_t size()
+    {
+        return list_.size();
     }
 private:
     void initStructure(){

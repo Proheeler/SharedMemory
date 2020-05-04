@@ -94,6 +94,9 @@ int main()
     assert(info_test == info);
     size_t datafromnode = *(size_t*)((char*)nodeData+sizeof(NodeInfo));
     assert(datafromnode == data);
+
+    list.remove(0);
+    list.remove(2);
     Array arr1;
     arr1 = FindSegments();
     assert(arr1.size >0);
