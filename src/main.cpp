@@ -6,6 +6,7 @@
 #include "ArrayShm.h"
 #include "VariantNode.h"
 #include "LinkedVariantList.h"
+#include "SharedVector.h"
 int main()
 {
     int shmid =Create(sizeof(int)*10+100,4);
@@ -87,7 +88,7 @@ int main()
     VariantNode node4(sizeof(size_t));
     size_t data3 = 100700;
     std::cout<<node4.writeData(&data3)<<std::endl;
-    list.insert(-1,std::move(node3));
+    list.insert(10,std::move(node3));
     list.pushback(std::move(node4));
     void* nodeData = list.at(0).getData();
     NodeInfo info_test =*(NodeInfo*)nodeData;
@@ -97,6 +98,17 @@ int main()
 
     list.remove(0);
     list.remove(2);
+
+    SharedVector<int> vect;
+    vect.push_back(10);
+    std::cout<<"////////////////////////"<<std::endl;
+    vect.printData();
+    vect.push_back(20);
+
+    vect.push_back(30);
+    //
+    std::cout<<"////////////////////////"<<std::endl;
+    vect.printData();
     Array arr1;
     arr1 = FindSegments();
     assert(arr1.size >0);

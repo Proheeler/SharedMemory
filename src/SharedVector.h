@@ -1,63 +1,81 @@
 #ifndef SHAREDVECTOR_H
 #define SHAREDVECTOR_H
 #include "BaseShmm.h"
+#include <memory>
+#include <iostream>
+typedef struct
+{
+    int dataBlockShmid;
+    int currentUsage;
+}DataBlockInfo;
+
 
 template< typename T>
-class SharedVector:public BaseShmm
+class SharedVector
 {
-    explicit SharedVector(size_t numberOfElements):BaseShmm(
-                                                   BaseShmm::createSegment((numberOfElements*(sizeof(T)+sizeof(std::atomic<int>*)))+1+2*sizeof(size_t),sizeof(T)))
-    {
-	resetAtomics();
+public:
+    SharedVector(){
+        int shmidForDataBlock = BaseShmm::createSegment((5*(sizeof(T)+sizeof(std::atomic<int>*)))+1+2*sizeof(size_t),sizeof(T));
+        dataBlock_ = std::make_unique<BaseShmm>(shmidForDataBlock);
+        int shmidForControlBlock = BaseShmm::createSegment((sizeof(DataBlockInfo)+sizeof(std::atomic<int>*))+1+2*sizeof(size_t),sizeof(DataBlockInfo));
+        controlBlock_ = std::make_unique<BaseShmm>(shmidForControlBlock);
+        DataBlockInfo initialInfo = {shmidForDataBlock,0};
+        controlBlock_->writeToSegment(0,&initialInfo);
+    };
+    ~SharedVector(){
+        BaseShmm::deleteSegment(controlBlock_->getShmid());
+        BaseShmm::deleteSegment(dataBlock_->getShmid());
+        controlBlock_.~unique_ptr();
+        dataBlock_.~unique_ptr();
     }
-    ~SharedVector()
+    void push_back(T value)
     {
-	shmdt(get());
-	BaseShmm::deleteSegment(getShmid());
+        auto currentInfo = (DataBlockInfo*)(controlBlock_->readFromSegment(0));
+        if(currentInfo->currentUsage < (dataBlock_->getMaxSize()-2))
+        {
+            dataBlock_->writeToSegment(currentInfo->currentUsage,&value);
+            DataBlockInfo newInfo = {currentInfo->dataBlockShmid,currentInfo->currentUsage+1};
+            controlBlock_->unlock(0);
+            controlBlock_->writeToSegment(0,&newInfo);
+        }
+        else
+        {
+            int shmidForDataBlock = BaseShmm::createSegment((2*dataBlock_->getMaxSize()*(sizeof(T)+sizeof(std::atomic<int>*)))+1+2*sizeof(size_t),sizeof(T));
+            copyToNewDataBlock(shmidForDataBlock,currentInfo);
+            dataBlock_->writeToSegment(currentInfo->currentUsage,&value);
+            DataBlockInfo newInfo = {shmidForDataBlock,currentInfo->currentUsage+1};
+            controlBlock_->unlock(0);
+            controlBlock_->writeToSegment(0,&newInfo);
+        }
     }
-    bool write(int index,void* data,bool forceWrite = false)
+    void printData()
     {
-       auto isWritten = writeToSegment(index,data);
-       if(!isWritten && forceWrite){
-	   resetAtomics();
-	   isWritten =writeToSegment(index,data);
-       }
-       return isWritten;
+        auto info = (DataBlockInfo*)(controlBlock_->readFromSegment(0));
+        int range = info->currentUsage;
+        for(int i = 0; i < range;++i)
+        {
+            T data = *((T*)dataBlock_->readFromSegment(i));
+            std::cout<<data<<std::endl;
+            dataBlock_->unlock(i);
+        }
     }
-    template<typename ... U>
-    bool emplaceWrite(int index,const U ...args)
-    {
-	int dataShift=getBlockSize()+sizeof(std::atomic<int>*);
-	std::atomic<int>& atomic = (std::atomic<int>&)(*((std::atomic<int>*)(static_cast<char*>(get())+1+2*sizeof(size_t)+index*dataShift)));
-	void *ptr=nullptr;
-	int free = 0;
-	int write = 1;
-	bool exchanged = atomic.compare_exchange_strong(free,write);
-	if(exchanged)
-	{
-	    ptr=static_cast<char*>(get())+1+2*sizeof(size_t)+index*dataShift+sizeof(std::atomic<int>*);
-	    new (ptr) T{args ...};
-	    unlock(index);
-	    return true;
-	}
-	return false;
+
+private:
+    void copyToNewDataBlock(int shmidForDataBlock,DataBlockInfo *info){
+        auto dataBlock_tmp = std::make_unique<BaseShmm>(shmidForDataBlock);
+        int range = info->currentUsage;
+        for(int i = 0; i < range;++i)
+        {
+            T* data = (T*)dataBlock_->readFromSegment(i);
+            dataBlock_tmp->writeToSegment(i,data);
+            dataBlock_->unlock(i);
+        }
+        BaseShmm::deleteSegment(dataBlock_->getShmid());
+        dataBlock_ = std::move(dataBlock_tmp);
 
     }
-    T* operator [](int index)
-    {
-	return static_cast<T*>(readFromSegment(index));
-    }
-    T* at(size_t index)
-    {
-	if(index<getMaxSize() && index>=0)
-	{
-	    return (static_cast<T*>(readFromSegment(index)));
-	}
-	throw std::invalid_argument("Index out of range");
-    }
-    size_t size(){
-	return getMaxSize();
-    }
+    std::unique_ptr<BaseShmm> controlBlock_; //place in memory where shmid for datablock is stored
+    std::unique_ptr<BaseShmm> dataBlock_;
 };
 
 #endif // SHAREDVECTOR_H

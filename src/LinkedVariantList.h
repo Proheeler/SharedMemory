@@ -48,7 +48,6 @@ public:
     }
     void insert(size_t index,VariantNode && node)
     {
-        assert(index<list_.size());
         if(index!=0 && index-1<list_.size())
         {
             auto prevInfoprevNode = list_.at(index-1).info();
