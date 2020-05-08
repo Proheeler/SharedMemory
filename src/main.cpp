@@ -106,9 +106,16 @@ int main()
     vect.push_back(20);
 
     vect.push_back(30);
-    //
     std::cout<<"////////////////////////"<<std::endl;
     vect.printData();
+    //
+    std::cout<<"////////////////////////"<<std::endl;
+    while(!vect.empty())
+    {
+        int data = vect.pop_back();
+        std::cout<<data<<std::endl;
+    }
+
     Array arr1;
     arr1 = FindSegments();
     assert(arr1.size >0);
